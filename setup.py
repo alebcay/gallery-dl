@@ -3,42 +3,46 @@
 
 import re
 import sys
-import os.path
 import warnings
 from setuptools import setup
+from pathlib import Path
 
 
 def read(fname):
-    path = os.path.join(os.path.dirname(__file__), fname)
-    with open(path, encoding="utf-8") as file:
+    path = Path(__file__).resolve().parent / fname
+    with path.open(encoding="utf-8") as file:
         return file.read()
 
+
 def check_file(fname):
-    path = os.path.join(os.path.dirname(__file__), fname)
-    if os.path.exists(path):
+    path = Path(__file__).resolve().parent / fname
+    if path.exists():
         return True
     warnings.warn(
-        "Not including file '{}' since it is not present. "
-        "Run 'make' to build all automatically generated files.".format(fname)
+        f"Not including file '{fname}' since it is not present. "
+        f"Run 'make' to build all automatically generated files."
     )
     return False
 
 
 # get version without importing the package
-VERSION = re.search(
+version_match = re.search(
     r'__version__\s*=\s*"([^"]+)"',
     read("gallery_dl/version.py"),
-).group(1)
+)
+VERSION = version_match.group(1) if version_match else "unknown"
+
 
 FILES = [
     (path, [f for f in files if check_file(f)])
     for (path, files) in [
         ("share/bash-completion/completions", ["data/completion/gallery-dl"]),
-        ("share/zsh/site-functions"         , ["data/completion/_gallery-dl"]),
-        ("share/man/man1"                   , ["data/man/gallery-dl.1"]),
-        ("share/man/man5"                   , ["data/man/gallery-dl.conf.5"]),
+        ("share/zsh/site-functions", ["data/completion/_gallery-dl"]),
+        ("share/man/man1", ["data/man/gallery-dl.1"]),
+        ("share/man/man5", ["data/man/gallery-dl.conf.5"]),
     ]
 ]
+
 
 DESCRIPTION = ("Command-line program to download image galleries and "
                "collections from several image hosting sites")
@@ -56,23 +60,25 @@ if "py2exe" in sys.argv:
 
     params = {
         "console": [{
-            "script"         : "./gallery_dl/__main__.py",
-            "dest_base"      : "gallery-dl",
-            "version"        : VERSION,
-            "description"    : DESCRIPTION,
-            "comments"       : LONG_DESCRIPTION,
-            "product_name"   : "gallery-dl",
+            "script": "./gallery_dl/__main__.py",
+            "dest_base": "gallery-dl",
+            "version": VERSION,
+            "description": DESCRIPTION,
+            "comments": LONG_DESCRIPTION,
+            "product_name": "gallery-dl",
             "product_version": VERSION,
         }],
-        "options": {"py2exe": {
-            "bundle_files": 0,
-            "compressed"  : 1,
-            "optimize"    : 1,
-            "dist_dir"    : ".",
-            "packages"    : ["gallery_dl"],
-            "includes"    : ["youtube_dl"],
-            "dll_excludes": ["w9xpopen.exe"],
-        }},
+        "options": {
+            "py2exe": {
+                "bundle_files": 0,
+                "compressed": 1,
+                "optimize": 1,
+                "dist_dir": ".",
+                "packages": ["gallery_dl"],
+                "includes": ["youtube_dl"],
+                "dll_excludes": ["w9xpopen.exe"],
+            }
+        },
         "zipfile": None,
     }
 
@@ -101,12 +107,7 @@ setup(
             "youtube-dl",
         ],
     },
-    packages=[
-        "gallery_dl",
-        "gallery_dl.extractor",
-        "gallery_dl.downloader",
-        "gallery_dl.postprocessor",
-    ],
+    packages=find_packages(),
     entry_points={
         "console_scripts": [
             "gallery-dl = gallery_dl:main",
